@@ -49,9 +49,9 @@ loop = asyncio.get_event_loop()
 async def start_services():
     print('\n------------------- Initializing Telegram Bot -------------------')
 
-    # Start bot with time sync fix
-    await StreamBot.start(no_updates=True)
-    await asyncio.sleep(1)  # wait a bit before first API call
+    # Start bot (no_updates argument removed to fix TypeError)
+    await StreamBot.start()
+    await asyncio.sleep(1)  # first API call se pehle chhota wait
 
     bot_info = await StreamBot.get_me()
     StreamBot.username = bot_info.username
