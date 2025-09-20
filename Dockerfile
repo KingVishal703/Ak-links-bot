@@ -6,13 +6,13 @@ WORKDIR /app
 # Copy requirements first
 COPY requirements.txt ./
 
-# Install system deps + tzdata + ntp
+# Install system deps + tzdata + ntpsec-ntpdate
 RUN apt-get update && apt-get install -y \
     gcc \
     build-essential \
     python3-dev \
     tzdata \
-    ntpdate \
+    ntpsec-ntpdate \
  && rm -rf /var/lib/apt/lists/*
 
 # Force timezone UTC
