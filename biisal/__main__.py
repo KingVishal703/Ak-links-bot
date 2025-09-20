@@ -15,8 +15,9 @@ from .server import web_server
 from .utils.keepalive import ping_server
 from biisal.bot.clients import initialize_clients
 
-import os, time
+import time
 
+# Ensure UTC timezone
 if "TZ" not in os.environ:
     os.environ["TZ"] = "UTC"
     time.tzset()
@@ -38,23 +39,24 @@ logging.getLogger("aiohttp.web").setLevel(logging.ERROR)
 
 ppath = "biisal/bot/plugins/*.py"
 files = glob.glob(ppath)
-StreamBot.start()
+
 loop = asyncio.get_event_loop()
 
 
 async def start_services():
-    print('\n')
-    print('------------------- Initalizing Telegram Bot -------------------')
+    # Start Telegram Bot (async)
+    print("\n------------------- Starting Telegram Bot -------------------")
+    await StreamBot.start()
     bot_info = await StreamBot.get_me()
     StreamBot.username = bot_info.username
-    print("------------------------------ DONE ------------------------------")
-    print()
-    print(
-        "---------------------- Initializing Clients ----------------------"
-    )
+    print("------------------------------ DONE ------------------------------\n")
+
+    # Initialize clients
+    print("---------------------- Initializing Clients ----------------------")
     await initialize_clients()
-    print("------------------------------ DONE ------------------------------")
-    print('\n')
+    print("------------------------------ DONE ------------------------------\n")
+
+    # Import plugins
     print('--------------------------- Importing ---------------------------')
     for name in files:
         with open(name) as a:
@@ -67,31 +69,31 @@ async def start_services():
             spec.loader.exec_module(load)
             sys.modules["biisal.bot.plugins." + plugin_name] = load
             print("Imported => " + plugin_name)
+
+    # Keep-alive for Heroku/Koyeb
     if Var.ON_HEROKU:
-        print("------------------ Starting Keep Alive Service ------------------")
-        print()
+        print("------------------ Starting Keep Alive Service ------------------\n")
         asyncio.create_task(ping_server())
-    print('-------------------- Initalizing Web Server -------------------------')
+
+    # Start Web Server
+    print('-------------------- Initializing Web Server --------------------')
     app = web.AppRunner(await web_server())
     await app.setup()
     bind_address = "0.0.0.0" if Var.ON_HEROKU else Var.BIND_ADRESS
     await web.TCPSite(app, bind_address, Var.PORT).start()
-    print('----------------------------- DONE ---------------------------------------------------------------------')
-    print('\n')
-    print('---------------------------------------------------------------------------------------------------------')
-    print('---------------------------------------------------------------------------------------------------------')
-    print(' follow me for more such exciting bots! https://github.com/biisal')
-    print('---------------------------------------------------------------------------------------------------------')
-    print('\n')
-    print('----------------------- Service Started -----------------------------------------------------------------')
-    print('                        bot =>> {}'.format((await StreamBot.get_me()).first_name))
-    print('                        server ip =>> {}:{}'.format(bind_address, Var.PORT))
-    print('                        Owner =>> {}'.format((Var.OWNER_USERNAME)))
+    print('----------------------------- DONE -----------------------------\n')
+
+    # Service info
+    print('----------------------- Service Started -----------------------')
+    print(f'bot =>> {bot_info.first_name}')
+    print(f'server ip =>> {bind_address}:{Var.PORT}')
+    print(f'Owner =>> {Var.OWNER_USERNAME}')
     if Var.ON_HEROKU:
-        print('                        app runnng on =>> {}'.format(Var.FQDN))
-    print('---------------------------------------------------------------------------------------------------------')
+        print(f'app running on =>> {Var.FQDN}')
     print(LOGO)
+
     await idle()
+
 
 if __name__ == '__main__':
     try:
