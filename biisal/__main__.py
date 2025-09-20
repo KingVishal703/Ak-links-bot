@@ -15,6 +15,12 @@ from .server import web_server
 from .utils.keepalive import ping_server
 from biisal.bot.clients import initialize_clients
 
+import os, time
+
+if "TZ" not in os.environ:
+    os.environ["TZ"] = "UTC"
+    time.tzset()
+
 LOGO = """
  ____ ___ ___ ____    _    _     
 | __ )_ _|_ _/ ___|  / \  | |    
