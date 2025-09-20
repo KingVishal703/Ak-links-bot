@@ -6,13 +6,13 @@ WORKDIR /app
 # Copy requirements first
 COPY requirements.txt ./
 
-# Install dependencies
+# Install build tools and timezone
 RUN apk add --no-cache build-base gcc musl-dev linux-headers tzdata
 
 # Set timezone to UTC (fixes Pyrogram BadMsgNotification)
 ENV TZ=UTC
 
-# Install Python deps
+# Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy project files
