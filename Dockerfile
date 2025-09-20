@@ -1,4 +1,4 @@
-FROM python:3.9-alpine
+FROM python:3.9-slim
 
 # Set working directory
 WORKDIR /app
@@ -6,10 +6,16 @@ WORKDIR /app
 # Copy requirements first
 COPY requirements.txt ./
 
-# Install build tools and timezone
-RUN apk add --no-cache build-base gcc musl-dev linux-headers tzdata
+# Install system deps + tzdata + ntp
+RUN apt-get update && apt-get install -y \
+    gcc \
+    build-essential \
+    python3-dev \
+    tzdata \
+    ntpdate \
+ && rm -rf /var/lib/apt/lists/*
 
-# Set timezone to UTC (fixes Pyrogram BadMsgNotification)
+# Force timezone UTC
 ENV TZ=UTC
 
 # Install Python dependencies
@@ -18,5 +24,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy project files
 COPY . .
 
-# Run bot
-CMD ["python3", "-m", "biisal"]
+# Sync time before starting bot
+CMD ntpdate -u pool.ntp.org && python3 -m biisal
