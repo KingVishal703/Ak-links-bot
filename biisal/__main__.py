@@ -17,10 +17,13 @@ from biisal.bot.clients import initialize_clients
 
 import time
 
-# Ensure UTC timezone
+# Set timezone
 if "TZ" not in os.environ:
     os.environ["TZ"] = "UTC"
-    time.tzset()
+    try:
+        time.tzset()
+    except Exception:
+        pass  # Koyeb/Heroku me tzset fail ho sakta hai
 
 LOGO = """
  ____ ___ ___ ____    _    _     
@@ -29,6 +32,7 @@ LOGO = """
 | |_) | | | | ___) / ___ \| |___ 
 |____/___|___|____/_/   \_\_____|"""
 
+# Logging config
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -42,22 +46,22 @@ files = glob.glob(ppath)
 
 loop = asyncio.get_event_loop()
 
-
 async def start_services():
-    # Start Telegram Bot (async)
-    print("\n------------------- Starting Telegram Bot -------------------")
-    await StreamBot.start()
+    print('\n------------------- Initializing Telegram Bot -------------------')
+
+    # Start bot with time sync fix
+    await StreamBot.start(no_updates=True)
+    await asyncio.sleep(1)  # wait a bit before first API call
+
     bot_info = await StreamBot.get_me()
     StreamBot.username = bot_info.username
     print("------------------------------ DONE ------------------------------\n")
 
-    # Initialize clients
     print("---------------------- Initializing Clients ----------------------")
     await initialize_clients()
     print("------------------------------ DONE ------------------------------\n")
 
-    # Import plugins
-    print('--------------------------- Importing ---------------------------')
+    print('--------------------------- Importing Plugins ---------------------------')
     for name in files:
         with open(name) as a:
             patt = Path(a.name)
@@ -69,31 +73,28 @@ async def start_services():
             spec.loader.exec_module(load)
             sys.modules["biisal.bot.plugins." + plugin_name] = load
             print("Imported => " + plugin_name)
-
-    # Keep-alive for Heroku/Koyeb
+    
     if Var.ON_HEROKU:
         print("------------------ Starting Keep Alive Service ------------------\n")
         asyncio.create_task(ping_server())
 
-    # Start Web Server
-    print('-------------------- Initializing Web Server --------------------')
+    print('-------------------- Initializing Web Server -------------------------')
     app = web.AppRunner(await web_server())
     await app.setup()
     bind_address = "0.0.0.0" if Var.ON_HEROKU else Var.BIND_ADRESS
     await web.TCPSite(app, bind_address, Var.PORT).start()
     print('----------------------------- DONE -----------------------------\n')
 
-    # Service info
     print('----------------------- Service Started -----------------------')
-    print(f'bot =>> {bot_info.first_name}')
-    print(f'server ip =>> {bind_address}:{Var.PORT}')
-    print(f'Owner =>> {Var.OWNER_USERNAME}')
+    print(f"Bot =>> {bot_info.first_name}")
+    print(f"Server IP =>> {bind_address}:{Var.PORT}")
+    print(f"Owner =>> {Var.OWNER_USERNAME}")
     if Var.ON_HEROKU:
-        print(f'app running on =>> {Var.FQDN}')
+        print(f"App running on =>> {Var.FQDN}")
+    print('---------------------------------------------------------------')
     print(LOGO)
-
+    
     await idle()
-
 
 if __name__ == '__main__':
     try:
