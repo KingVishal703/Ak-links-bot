@@ -5,6 +5,16 @@ import time
 from asyncio import TimeoutError
 from pyrogram import filters
 
+
+# --- Fix for Heroku/Pyrogram time sync issue ---
+import time, os
+
+if "TZ" not in os.environ:
+    os.environ["TZ"] = "UTC"
+    time.tzset()
+# -----------------------------------------------
+
+
 LOGGER = logging.getLogger(__name__)
 SIZE_UNITS = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
 
